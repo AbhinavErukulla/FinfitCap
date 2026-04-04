@@ -1,0 +1,10 @@
+{
+  "demoAlice": {
+    "email": "alice@findit.demo",
+    "password": "TestPass123!"
+  },
+  "demoBob": {
+    "email": "bob@findit.demo",
+    "password": "TestPass123!"
+  }
+}

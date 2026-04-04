@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report Lost Item – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#reportlost-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/search.html">Search</a>
+      </nav>
+    </div>
+  </header>
+  <main id="reportlost-main" class="form-panel" style="max-width:520px">
+    <h1 class="page-title" id="reportlost-page-title">Report a lost item</h1>
+    <div id="reportlost-global-error" class="alert alert-error" style="display:none" role="alert"></div>
+    <form id="reportlost-form" novalidate>
+      <div class="form-group" id="reportlost-group-title">
+        <label for="reportlost-title">Title</label>
+        <input id="reportlost-title" name="title" required maxlength="200" />
+        <span class="field-error" id="reportlost-title-error">3–200 characters.</span>
+      </div>
+      <div class="form-group" id="reportlost-group-description">
+        <label for="reportlost-description">Description</label>
+        <textarea id="reportlost-description" name="description" required maxlength="5000"></textarea>
+        <span class="field-error" id="reportlost-description-error">10–5000 characters.</span>
+      </div>
+      <div class="form-group" id="reportlost-group-location">
+        <label for="reportlost-location">Last known location</label>
+        <input id="reportlost-location" name="location" required maxlength="255" />
+        <span class="field-error" id="reportlost-location-error">2–255 characters.</span>
+      </div>
+      <div class="form-group" id="reportlost-group-category">
+        <label for="reportlost-category">Category (optional)</label>
+        <input id="reportlost-category" name="category" maxlength="100" />
+        <span class="field-error" id="reportlost-category-error">Too long.</span>
+      </div>
+      <div class="form-group" id="reportlost-group-date">
+        <label for="reportlost-date">Date lost (optional)</label>
+        <input id="reportlost-date" name="lostDate" type="date" />
+        <span class="field-error" id="reportlost-date-error">Invalid date.</span>
+      </div>
+      <div class="form-group" id="reportlost-group-phone">
+        <label for="reportlost-phone">Contact phone (optional)</label>
+        <input id="reportlost-phone" name="contactPhone" maxlength="50" />
+        <span class="field-error" id="reportlost-phone-error">Too long.</span>
+      </div>
+      <button type="submit" class="btn btn-primary" id="reportlost-submit">Submit</button>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      if (!FindItLayout.requireAuth()) return;
+      var form = document.getElementById('reportlost-form');
+      var errBox = document.getElementById('reportlost-global-error');
+      function g(name) {
+        return document.getElementById('reportlost-group-' + name);
+      }
+      function setE(n, on) {
+        if (g(n)) g(n).classList.toggle('has-error', on);
+      }
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errBox.style.display = 'none';
+        ['title', 'description', 'location', 'category', 'date', 'phone'].forEach(function (x) {
+          setE(x, false);
+        });
+        var title = document.getElementById('reportlost-title').value.trim();
+        var desc = document.getElementById('reportlost-description').value.trim();
+        var loc = document.getElementById('reportlost-location').value.trim();
+        var cat = document.getElementById('reportlost-category').value.trim();
+        var dt = document.getElementById('reportlost-date').value;
+        var ph = document.getElementById('reportlost-phone').value.trim();
+        setE('title', title.length < 3 || title.length > 200);
+        setE('description', desc.length < 10 || desc.length > 5000);
+        setE('location', loc.length < 2 || loc.length > 255);
+        setE('category', cat.length > 100);
+        setE('phone', ph.length > 50);
+        if (form.querySelector('.form-group.has-error')) return;
+        try {
+          var res = await FindItApi.api('/lost/report', {
+            method: 'POST',
+            body: {
+              title: title,
+              description: desc,
+              location: loc,
+              category: cat || undefined,
+              lostDate: dt || undefined,
+              contactPhone: ph || undefined,
+            },
+          });
+          window.location.href =
+            '/item-detail.html?type=lost&id=' + encodeURIComponent(res.data.id);
+        } catch (err) {
+          errBox.textContent = (err.body && err.body.message) || err.message;
+          errBox.style.display = 'block';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Item Details – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#itemdetail-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/search.html">Search</a>
+        <a href="/dashboard.html" id="itemdetail-nav-dashboard">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+  <main id="itemdetail-main">
+    <div id="itemdetail-error" class="alert alert-error" style="display:none" role="alert"></div>
+    <article class="card" id="itemdetail-article">
+      <h1 class="page-title" id="itemdetail-title">…</h1>
+      <p id="itemdetail-meta" class="item-meta"></p>
+      <p id="itemdetail-description"></p>
+      <p id="itemdetail-location"><strong>Location:</strong> <span id="itemdetail-location-text"></span></p>
+      <div id="itemdetail-owner-actions" style="display:none">
+        <h2 id="itemdetail-manage-heading">Manage post</h2>
+        <form id="itemdetail-edit-form" class="stack">
+          <div class="form-group">
+            <label for="itemdetail-edit-title">Title</label>
+            <input id="itemdetail-edit-title" />
+          </div>
+          <div class="form-group">
+            <label for="itemdetail-edit-description">Description</label>
+            <textarea id="itemdetail-edit-description"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="itemdetail-edit-location">Location</label>
+            <input id="itemdetail-edit-location" />
+          </div>
+          <div class="form-group">
+            <label for="itemdetail-edit-status">Status</label>
+            <select id="itemdetail-edit-status"></select>
+          </div>
+          <button type="submit" class="btn btn-primary" id="itemdetail-save">Save changes</button>
+        </form>
+        <button type="button" class="btn btn-danger" id="itemdetail-delete">Delete post</button>
+      </div>
+      <section id="itemdetail-contact-section" class="card" style="margin-top:1rem;background:#0d1218">
+        <h2 id="itemdetail-contact-heading">Contact owner</h2>
+        <p class="muted" id="itemdetail-login-hint" style="display:none">You must <a href="/login.html" id="itemdetail-link-login">login</a> to message the owner.</p>
+        <form id="itemdetail-contact-form" style="display:none">
+          <div class="form-group">
+            <label for="itemdetail-contact-message">Message</label>
+            <textarea id="itemdetail-contact-message" required minlength="5" maxlength="2000"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="itemdetail-contact-email">Your email</label>
+            <input id="itemdetail-contact-email" type="email" required />
+          </div>
+          <button type="submit" class="btn btn-primary" id="itemdetail-contact-submit">Send</button>
+        </form>
+        <div id="itemdetail-contact-success" class="alert alert-success" style="display:none" role="status"></div>
+      </section>
+    </article>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var type = params.get('type');
+      var id = params.get('id');
+      var state = { item: null, type: type, id: id };
+
+      function showErr(msg) {
+        var e = document.getElementById('itemdetail-error');
+        e.textContent = msg;
+        e.style.display = 'block';
+      }
+
+      if (!type || !id || !['lost', 'found'].includes(type)) {
+        showErr('Invalid item link.');
+        return;
+      }
+
+      async function load() {
+        try {
+          var res = await FindItApi.api('/item/' + encodeURIComponent(id) + '?type=' + encodeURIComponent(type));
+          state.item = res.data.item;
+          render();
+        } catch (err) {
+          showErr((err.body && err.body.message) || err.message);
+        }
+      }
+
+      function render() {
+        var it = state.item;
+        document.getElementById('itemdetail-title').textContent = it.title;
+        document.getElementById('itemdetail-meta').textContent =
+          type + ' · ' + it.status + ' · Posted ' + (it.created_at || '');
+        document.getElementById('itemdetail-description').textContent = it.description;
+        document.getElementById('itemdetail-location-text').textContent = it.location;
+
+        var token = FindItApi.getToken();
+        var uid = null;
+        try {
+          var p = token && JSON.parse(atob(token.split('.')[1]));
+          uid = p && p.sub;
+        } catch (ignore) {}
+
+        var owner = it.user_id && String(it.user_id) === String(uid);
+        var manage = document.getElementById('itemdetail-owner-actions');
+        if (owner) {
+          manage.style.display = 'block';
+          document.getElementById('itemdetail-edit-title').value = it.title;
+          document.getElementById('itemdetail-edit-description').value = it.description;
+          document.getElementById('itemdetail-edit-location').value = it.location;
+          var sel = document.getElementById('itemdetail-edit-status');
+          sel.innerHTML = '';
+          var opts =
+            type === 'lost'
+              ? ['open', 'resolved', 'closed']
+              : ['open', 'returned', 'closed'];
+          opts.forEach(function (o) {
+            var op = document.createElement('option');
+            op.value = o;
+            op.textContent = o;
+            if (o === it.status) op.selected = true;
+            sel.appendChild(op);
+          });
+        }
+
+        var contactSection = document.getElementById('itemdetail-contact-form');
+        var hint = document.getElementById('itemdetail-login-hint');
+        if (!owner) {
+          if (token) {
+            contactSection.style.display = 'block';
+            hint.style.display = 'none';
+          } else {
+            hint.style.display = 'block';
+            contactSection.style.display = 'none';
+          }
+        } else {
+          document.getElementById('itemdetail-contact-section').style.display = 'none';
+        }
+      }
+
+      document.getElementById('itemdetail-edit-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        try {
+          await FindItApi.api(
+            '/item/' + encodeURIComponent(id) + '/update?type=' + encodeURIComponent(type),
+            {
+              method: 'PUT',
+              body: {
+                title: document.getElementById('itemdetail-edit-title').value.trim(),
+                description: document.getElementById('itemdetail-edit-description').value.trim(),
+                location: document.getElementById('itemdetail-edit-location').value.trim(),
+                status: document.getElementById('itemdetail-edit-status').value,
+              },
+            }
+          );
+          await load();
+        } catch (err) {
+          showErr((err.body && err.body.message) || err.message);
+        }
+      });
+
+      document.getElementById('itemdetail-delete').addEventListener('click', async function () {
+        if (!confirm('Delete this post permanently?')) return;
+        try {
+          await FindItApi.api('/item/' + encodeURIComponent(id) + '/delete?type=' + encodeURIComponent(type), {
+            method: 'DELETE',
+          });
+          window.location.href = '/dashboard.html';
+        } catch (err) {
+          showErr((err.body && err.body.message) || err.message);
+        }
+      });
+
+      document.getElementById('itemdetail-contact-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var msg = document.getElementById('itemdetail-contact-message').value.trim();
+        var em = document.getElementById('itemdetail-contact-email').value.trim();
+        try {
+          await FindItApi.api('/item/contact-owner', {
+            method: 'POST',
+            body: {
+              itemType: type,
+              itemId: Number(id),
+              message: msg,
+              contactEmail: em,
+            },
+          });
+          document.getElementById('itemdetail-contact-success').textContent = 'Message sent to owner.';
+          document.getElementById('itemdetail-contact-success').style.display = 'block';
+        } catch (err) {
+          showErr((err.body && err.body.message) || err.message);
+        }
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

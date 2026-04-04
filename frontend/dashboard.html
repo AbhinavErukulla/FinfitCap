@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#dashboard-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/search.html">Search</a>
+        <a href="/report-lost.html">Report Lost</a>
+        <a href="/report-found.html">Report Found</a>
+        <a href="/dashboard.html" aria-current="page">Dashboard</a>
+        <button type="button" class="btn btn-secondary" id="dashboard-logout">Logout</button>
+      </nav>
+    </div>
+  </header>
+  <main id="dashboard-main">
+    <h1 class="page-title" id="dashboard-title">Your dashboard</h1>
+    <p class="muted" id="dashboard-welcome">Loading…</p>
+    <div id="dashboard-alert" class="alert alert-error" style="display:none" role="alert"></div>
+    <div class="dashboard-columns">
+      <section class="card" aria-labelledby="dashboard-lost-heading">
+        <h2 id="dashboard-lost-heading">Your lost posts</h2>
+        <ul id="dashboard-lost-list" class="stack"></ul>
+      </section>
+      <section class="card" aria-labelledby="dashboard-found-heading">
+        <h2 id="dashboard-found-heading">Your found posts</h2>
+        <ul id="dashboard-found-list" class="stack"></ul>
+      </section>
+    </div>
+    <p>
+      <a class="btn btn-primary" href="/report-lost.html" id="dashboard-link-report-lost">Report lost item</a>
+      <a class="btn btn-secondary" href="/report-found.html" id="dashboard-link-report-found">Report found item</a>
+    </p>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      if (!FindItLayout.requireAuth()) return;
+      document.getElementById('dashboard-logout').addEventListener('click', function () {
+        FindItLayout.logout();
+      });
+      var lostList = document.getElementById('dashboard-lost-list');
+      var foundList = document.getElementById('dashboard-found-list');
+      var alertEl = document.getElementById('dashboard-alert');
+      FindItApi.api('/user/my-items')
+        .then(function (res) {
+          document.getElementById('dashboard-welcome').textContent = 'Manage your listings below.';
+          (res.data.lost || []).forEach(function (row) {
+            var li = document.createElement('li');
+            li.id = 'dashboard-lost-row-' + row.id;
+            li.innerHTML =
+              '<strong>' +
+              row.title +
+              '</strong> — <span class="item-meta">' +
+              row.status +
+              '</span> · <a href="/item-detail.html?type=lost&id=' +
+              row.id +
+              '" id="dashboard-lost-link-' +
+              row.id +
+              '">View</a>';
+            lostList.appendChild(li);
+          });
+          (res.data.found || []).forEach(function (row) {
+            var li = document.createElement('li');
+            li.id = 'dashboard-found-row-' + row.id;
+            li.innerHTML =
+              '<strong>' +
+              row.title +
+              '</strong> — <span class="item-meta">' +
+              row.status +
+              '</span> · <a href="/item-detail.html?type=found&id=' +
+              row.id +
+              '" id="dashboard-found-link-' +
+              row.id +
+              '">View</a>';
+            foundList.appendChild(li);
+          });
+        })
+        .catch(function (err) {
+          if (err.status === 401) {
+            window.location.href = '/login.html';
+          } else {
+            alertEl.textContent = (err.body && err.body.message) || err.message;
+            alertEl.style.display = 'block';
+          }
+        });
+    })();
+  </script>
+</body>
+</html>

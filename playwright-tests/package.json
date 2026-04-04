@@ -1,0 +1,23 @@
+{
+  "name": "findit-playwright-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "dashboard:server": "node dashboard-server.js",
+    "dashboard:ui": "cd dashboard-ui && npm start",
+    "dashboard": "concurrently \"npm run dashboard:server\" \"npm run dashboard:ui\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "allure-playwright": "^2.15.1",
+    "concurrently": "^9.2.1",
+    "dotenv": "^16.4.5"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

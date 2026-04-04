@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Search Items – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#search-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/search.html" aria-current="page">Search</a>
+        <a href="/login.html">Login</a>
+      </nav>
+    </div>
+  </header>
+  <main id="search-main">
+    <h1 class="page-title" id="search-page-title">Search &amp; browse</h1>
+    <form id="search-form" class="search-bar" role="search">
+      <input type="search" id="search-input" name="q" placeholder="Keywords, location…" aria-label="Search keywords" />
+      <label class="visually-hidden" for="search-type-filter">Item type</label>
+      <select id="search-type-filter" name="type" aria-label="Item type filter">
+        <option value="all">All types</option>
+        <option value="lost">Lost</option>
+        <option value="found">Found</option>
+      </select>
+      <label class="visually-hidden" for="search-status-filter">Status</label>
+      <select id="search-status-filter" name="status" aria-label="Status filter">
+        <option value="">Any status</option>
+        <option value="open">Open</option>
+        <option value="resolved">Resolved</option>
+        <option value="returned">Returned</option>
+        <option value="closed">Closed</option>
+      </select>
+      <button type="submit" class="btn btn-primary" id="search-button">Search</button>
+    </form>
+    <p class="muted" id="search-results-count"></p>
+    <div id="search-results" class="items-list" aria-live="polite"></div>
+    <div class="pagination">
+      <button type="button" class="btn btn-secondary" id="search-prev-page">Previous</button>
+      <span id="search-page-label" class="muted">Page 1</span>
+      <button type="button" class="btn btn-secondary" id="search-next-page">Next</button>
+    </div>
+  </main>
+  <style>
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      var page = 1;
+      var pageSize = 10;
+      var form = document.getElementById('search-form');
+      var resultsEl = document.getElementById('search-results');
+      var countEl = document.getElementById('search-results-count');
+
+      function buildQuery() {
+        var params = new URLSearchParams();
+        var q = document.getElementById('search-input').value.trim();
+        if (q) params.set('q', q);
+        var t = document.getElementById('search-type-filter').value;
+        if (t && t !== 'all') params.set('type', t);
+        var s = document.getElementById('search-status-filter').value;
+        if (s) params.set('status', s);
+        params.set('page', String(page));
+        params.set('pageSize', String(pageSize));
+        return params.toString();
+      }
+
+      async function runSearch() {
+        resultsEl.innerHTML = '';
+        countEl.textContent = 'Loading…';
+        var qs = buildQuery();
+        var data = await FindItApi.api('/items?' + qs);
+        var items = (data.data && data.data.items) || [];
+        var total = (data.data && data.data.total) || 0;
+        countEl.textContent = total + ' result(s)';
+        document.getElementById('search-page-label').textContent = 'Page ' + page;
+        items.forEach(function (it, idx) {
+          var a = document.createElement('a');
+          a.className = 'item-row';
+          a.href = '/item-detail.html?type=' + encodeURIComponent(it.item_type) + '&id=' + encodeURIComponent(it.id);
+          a.id = 'search-result-' + it.item_type + '-' + it.id;
+          a.innerHTML =
+            '<h3>' +
+            escapeHtml(it.title) +
+            '</h3><div class="item-meta">' +
+            escapeHtml(it.item_type) +
+            ' · ' +
+            escapeHtml(it.location) +
+            ' · ' +
+            escapeHtml(it.status) +
+            '</div>';
+          resultsEl.appendChild(a);
+        });
+        if (!items.length) {
+          resultsEl.innerHTML = '<p id="search-empty" class="muted">No items match.</p>';
+        }
+      }
+
+      function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        page = 1;
+        runSearch().catch(function (err) {
+          countEl.textContent = err.message;
+        });
+      });
+
+      document.getElementById('search-prev-page').addEventListener('click', function () {
+        if (page > 1) {
+          page--;
+          runSearch().catch(function () {});
+        }
+      });
+      document.getElementById('search-next-page').addEventListener('click', function () {
+        page++;
+        runSearch().catch(function () {});
+      });
+
+      runSearch().catch(function (err) {
+        countEl.textContent = (err.body && err.body.message) || err.message;
+      });
+    })();
+  </script>
+</body>
+</html>

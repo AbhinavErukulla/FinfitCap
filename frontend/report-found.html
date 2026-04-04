@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report Found Item – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#reportfound-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/search.html">Search</a>
+      </nav>
+    </div>
+  </header>
+  <main id="reportfound-main" class="form-panel" style="max-width:520px">
+    <h1 class="page-title" id="reportfound-page-title">Report a found item</h1>
+    <div id="reportfound-global-error" class="alert alert-error" style="display:none" role="alert"></div>
+    <form id="reportfound-form" novalidate>
+      <div class="form-group" id="reportfound-group-title">
+        <label for="reportfound-title">Title</label>
+        <input id="reportfound-title" name="title" required maxlength="200" />
+        <span class="field-error" id="reportfound-title-error">3–200 characters.</span>
+      </div>
+      <div class="form-group" id="reportfound-group-description">
+        <label for="reportfound-description">Description</label>
+        <textarea id="reportfound-description" name="description" required maxlength="5000"></textarea>
+        <span class="field-error" id="reportfound-description-error">10–5000 characters.</span>
+      </div>
+      <div class="form-group" id="reportfound-group-location">
+        <label for="reportfound-location">Found location</label>
+        <input id="reportfound-location" name="location" required maxlength="255" />
+        <span class="field-error" id="reportfound-location-error">2–255 characters.</span>
+      </div>
+      <div class="form-group" id="reportfound-group-category">
+        <label for="reportfound-category">Category (optional)</label>
+        <input id="reportfound-category" name="category" maxlength="100" />
+      </div>
+      <div class="form-group" id="reportfound-group-date">
+        <label for="reportfound-date">Date found (optional)</label>
+        <input id="reportfound-date" name="foundDate" type="date" />
+      </div>
+      <div class="form-group" id="reportfound-group-phone">
+        <label for="reportfound-phone">Contact phone (optional)</label>
+        <input id="reportfound-phone" name="contactPhone" maxlength="50" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="reportfound-submit">Submit</button>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      if (!FindItLayout.requireAuth()) return;
+      var form = document.getElementById('reportfound-form');
+      var errBox = document.getElementById('reportfound-global-error');
+      function g(name) {
+        return document.getElementById('reportfound-group-' + name);
+      }
+      function setE(n, on) {
+        if (g(n)) g(n).classList.toggle('has-error', on);
+      }
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errBox.style.display = 'none';
+        var title = document.getElementById('reportfound-title').value.trim();
+        var desc = document.getElementById('reportfound-description').value.trim();
+        var loc = document.getElementById('reportfound-location').value.trim();
+        var cat = document.getElementById('reportfound-category').value.trim();
+        var dt = document.getElementById('reportfound-date').value;
+        var ph = document.getElementById('reportfound-phone').value.trim();
+        setE('title', title.length < 3);
+        setE('description', desc.length < 10);
+        setE('location', loc.length < 2);
+        if (form.querySelector('.form-group.has-error')) return;
+        try {
+          var res = await FindItApi.api('/found/report', {
+            method: 'POST',
+            body: {
+              title: title,
+              description: desc,
+              location: loc,
+              category: cat || undefined,
+              foundDate: dt || undefined,
+              contactPhone: ph || undefined,
+            },
+          });
+          window.location.href =
+            '/item-detail.html?type=found&id=' + encodeURIComponent(res.data.id);
+        } catch (err) {
+          errBox.textContent = (err.body && err.body.message) || err.message;
+          errBox.style.display = 'block';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

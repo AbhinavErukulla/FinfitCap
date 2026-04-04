@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#login-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/search.html">Search</a>
+        <a href="/register.html">Register</a>
+        <a href="/login.html" aria-current="page">Login</a>
+      </nav>
+    </div>
+  </header>
+  <main id="login-main" class="form-panel">
+    <h1 class="page-title" id="login-page-title">Sign in</h1>
+    <div id="login-banner-registered" class="alert alert-success" style="display:none" role="status"></div>
+    <div id="login-global-error" class="alert alert-error" style="display:none" role="alert"></div>
+    <form id="login-form" novalidate>
+      <div class="form-group" id="login-group-email">
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" required />
+        <span class="field-error" id="login-email-error">Valid email required.</span>
+      </div>
+      <div class="form-group" id="login-group-password">
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+        <span class="field-error" id="login-password-error">Password required.</span>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="login-remember-me" name="rememberMe" />
+        <label for="login-remember-me">Remember me</label>
+      </div>
+      <button type="submit" class="btn btn-primary" id="login-submit">Login</button>
+    </form>
+    <p class="muted"><a href="/register.html" id="login-link-register">Create an account</a></p>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      if (new URLSearchParams(location.search).get('registered')) {
+        var b = document.getElementById('login-banner-registered');
+        b.textContent = 'Registration successful. Please sign in.';
+        b.style.display = 'block';
+      }
+      var form = document.getElementById('login-form');
+      var globalErr = document.getElementById('login-global-error');
+      var emailEl = document.getElementById('login-email');
+      var passEl = document.getElementById('login-password');
+      function setErr(group, on) {
+        var g = document.getElementById('login-group-' + group);
+        if (g) g.classList.toggle('has-error', on);
+      }
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        globalErr.style.display = 'none';
+        var email = emailEl.value.trim();
+        var okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        setErr('email', !okEmail);
+        setErr('password', !passEl.value);
+        if (!okEmail || !passEl.value) return;
+        try {
+          var data = await FindItApi.api('/login', {
+            method: 'POST',
+            body: {
+              email: email,
+              password: passEl.value,
+              rememberMe: document.getElementById('login-remember-me').checked,
+            },
+          });
+          if (data.data && data.data.token) FindItApi.setToken(data.data.token);
+          window.location.href = '/dashboard.html';
+        } catch (err) {
+          globalErr.textContent = (err.body && err.body.message) || err.message;
+          globalErr.style.display = 'block';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

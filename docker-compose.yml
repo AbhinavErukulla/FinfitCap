@@ -1,0 +1,18 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: findit-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: finditroot
+      MYSQL_DATABASE: findit
+      MYSQL_USER: findit
+      MYSQL_PASSWORD: finditpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

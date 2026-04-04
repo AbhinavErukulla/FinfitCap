@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FindIt – Lost &amp; Found Hub</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#home-main">Skip to content</a>
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <a class="logo" href="/" id="home-logo" aria-label="FindIt home">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/" id="nav-home" aria-current="page">Home</a>
+        <a href="/search.html" id="nav-search">Search</a>
+        <a href="/register.html" id="nav-register">Register</a>
+        <a href="/login.html" id="nav-login">Login</a>
+        <a href="/dashboard.html" id="nav-dashboard">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+  <main id="home-main">
+    <section class="hero" aria-labelledby="home-title">
+      <h1 id="home-title">Reunite people with what they’ve lost</h1>
+      <p id="home-tagline">
+        FindIt is a simple, trustworthy hub to report lost or found items, search listings, and contact owners securely.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/register.html" id="home-cta-register">Create an account</a>
+        <a class="btn btn-secondary" href="/search.html" id="home-cta-search">Browse items</a>
+        <a class="btn btn-secondary" href="/login.html" id="home-cta-login">Sign in</a>
+      </div>
+    </section>
+    <section class="grid-features" aria-label="Features">
+      <article class="card" id="home-feature-register">
+        <h2 id="home-feature-register-title">Register &amp; log in</h2>
+        <p id="home-feature-register-desc">Secure access to post and manage your listings.</p>
+      </article>
+      <article class="card" id="home-feature-report">
+        <h2 id="home-feature-report-title">Report items</h2>
+        <p id="home-feature-report-desc">Share lost or found details with clear validations.</p>
+      </article>
+      <article class="card" id="home-feature-contact">
+        <h2 id="home-feature-contact-title">Contact owners</h2>
+        <p id="home-feature-contact-desc">Reach out without exposing private data unnecessarily.</p>
+      </article>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+</body>
+</html>

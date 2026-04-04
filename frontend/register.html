@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register – FindIt</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#register-main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/">Find<span>It</span></a>
+      <nav class="nav-main" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/search.html">Search</a>
+        <a href="/register.html" aria-current="page">Register</a>
+        <a href="/login.html">Login</a>
+      </nav>
+    </div>
+  </header>
+  <main id="register-main" class="form-panel">
+    <h1 class="page-title" id="register-page-title">Create your account</h1>
+    <div id="register-global-error" class="alert alert-error" style="display:none" role="alert"></div>
+    <form id="register-form" novalidate>
+      <div class="form-group" id="register-group-firstname">
+        <label for="register-firstname">First name</label>
+        <input id="register-firstname" name="firstName" autocomplete="given-name" required maxlength="100" />
+        <span class="field-error" id="register-firstname-error">Enter your first name.</span>
+      </div>
+      <div class="form-group" id="register-group-lastname">
+        <label for="register-lastname">Last name</label>
+        <input id="register-lastname" name="lastName" autocomplete="family-name" required maxlength="100" />
+        <span class="field-error" id="register-lastname-error">Enter your last name.</span>
+      </div>
+      <div class="form-group" id="register-group-email">
+        <label for="register-email">Email</label>
+        <input id="register-email" name="email" type="email" autocomplete="email" required />
+        <span class="field-error" id="register-email-error">Valid email required.</span>
+      </div>
+      <div class="form-group" id="register-group-password">
+        <label for="register-password">Password</label>
+        <input id="register-password" name="password" type="password" autocomplete="new-password" required minlength="8" />
+        <span class="field-error" id="register-password-error">At least 8 characters.</span>
+      </div>
+      <div class="form-group" id="register-group-confirm">
+        <label for="register-confirm-password">Confirm password</label>
+        <input id="register-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required />
+        <span class="field-error" id="register-confirm-password-error">Passwords must match.</span>
+      </div>
+      <button type="submit" class="btn btn-primary" id="register-submit">Register</button>
+    </form>
+    <p class="muted" id="register-login-prompt">Already have an account? <a href="/login.html" id="register-link-login">Login</a></p>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById('register-form');
+      const globalErr = document.getElementById('register-global-error');
+      const el = {
+        fn: document.getElementById('register-firstname'),
+        ln: document.getElementById('register-lastname'),
+        em: document.getElementById('register-email'),
+        p1: document.getElementById('register-password'),
+        p2: document.getElementById('register-confirm-password'),
+      };
+      function setGroupError(name, on) {
+        const g = document.getElementById('register-group-' + name);
+        if (g) g.classList.toggle('has-error', on);
+      }
+      function validateClient() {
+        const fn = el.fn.value.trim();
+        const ln = el.ln.value.trim();
+        const email = el.em.value.trim();
+        const p1 = el.p1.value;
+        const p2 = el.p2.value;
+        setGroupError('firstname', !fn);
+        setGroupError('lastname', !ln);
+        setGroupError('email', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+        setGroupError('password', p1.length < 8);
+        setGroupError('confirm', p1 !== p2);
+        return !form.querySelector('.form-group.has-error');
+      }
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        globalErr.style.display = 'none';
+        ['firstname', 'lastname', 'email', 'password', 'confirm'].forEach(function (n) {
+          setGroupError(n, false);
+        });
+        if (!validateClient()) return;
+        try {
+          await FindItApi.api('/register', {
+            method: 'POST',
+            body: {
+              firstName: el.fn.value.trim(),
+              lastName: el.ln.value.trim(),
+              email: el.em.value.trim(),
+              password: el.p1.value,
+              confirmPassword: el.p2.value,
+            },
+          });
+          window.location.href = '/login.html?registered=1';
+        } catch (err) {
+          var d = err.body && err.body.details;
+          if (d) {
+            if (d.firstName) setGroupError('firstname', true);
+            if (d.lastName) setGroupError('lastname', true);
+            if (d.email) setGroupError('email', true);
+            if (d.password) setGroupError('password', true);
+            if (d.confirmPassword) setGroupError('confirm', true);
+          }
+          globalErr.textContent = (err.body && err.body.message) || err.message;
+          globalErr.style.display = 'block';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
