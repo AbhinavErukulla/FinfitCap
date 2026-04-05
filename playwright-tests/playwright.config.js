@@ -24,8 +24,8 @@ module.exports = defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 4 : undefined,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined,
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
@@ -40,7 +40,8 @@ module.exports = defineConfig({
     navigationTimeout: 45_000,
   },
   projects,
-  webServer: process.env.SKIP_WEBSERVER
+  // Skip webServer in CI since we start backend manually in GitHub Actions
+  webServer: process.env.CI
     ? undefined
     : {
         command: 'node scripts/seed.js && node src/server.js',

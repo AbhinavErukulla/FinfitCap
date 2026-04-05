@@ -10,6 +10,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: finditroot
+          MYSQL_DATABASE: findit
+          MYSQL_USER: findit
+          MYSQL_PASSWORD: finditpass
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -h localhost" --health-interval=10s --health-timeout=5s --health-retries=10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,15 +36,42 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Setup Maven
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
           cache: maven
 
-      - name: Install dependencies
+      - name: Create backend .env file
+        run: |
+          cp backend/.env.github backend/.env
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Wait for MySQL to be ready
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" -P"3306" --silent; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+
+      - name: Initialize database
+        run: |
+          mysql -h127.0.0.1 -P3306 -ufindit -pfinditpass findit < database/schema.sql
+          mysql -h127.0.0.1 -P3306 -ufindit -pfinditpass findit < database/seed.sql
+
+      - name: Start backend server
+        run: |
+          cd backend
+          npm start &
+          echo $! > ../backend.pid
+          sleep 10
+
+      - name: Check backend health
+        run: |
+          curl -f http://localhost:3000/health || (echo "Backend not ready" && exit 1)
+
+      - name: Install test dependencies
         run: |
           cd playwright-tests
           npm install
@@ -48,23 +87,42 @@ jobs:
         run: |
           cd playwright-tests
           npx playwright test
+        env:
+          BASE_URL: http://localhost:3000
 
       - name: Run Cypress tests
         run: |
           cd cypress-api-tests
-          npx cypress run
+          npx cypress run --env baseUrl=http://localhost:3000
+        env:
+          CYPRESS_BASE_URL: http://localhost:3000
 
       - name: Run Selenium tests
         run: |
           cd selenium-tests
-          mvn test
+          mvn test -Dfindit.baseUrl=http://localhost:3000 -Dtest.browser=chrome
+        env:
+          BASE_URL: http://localhost:3000
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: findit
+          DB_USER: findit
+          DB_USER: findit
+          DB_PASSWORD: finditpass
+
+      - name: Stop backend server
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+            rm backend.pid
+          fi
 
       - name: Merge Allure results
         run: |
-          mkdir combined-allure-results
-          cp -r playwright-tests/allure-results/* combined-allure-results/ || true
-          cp -r selenium-tests/target/allure-results/* combined-allure-results/ || true
-          cp -r cypress-api-tests/allure-results/* combined-allure-results/ || true
+          mkdir -p combined-allure-results
+          cp -r playwright-tests/allure-results/* combined-allure-results/ 2>/dev/null || true
+          cp -r selenium-tests/target/allure-results/* combined-allure-results/ 2>/dev/null || true
+          cp -r cypress-api-tests/allure-results/* combined-allure-results/ 2>/dev/null || true
 
       - name: Generate Allure report
         run: |
@@ -82,11 +140,3 @@ jobs:
         with:
           name: allure-report
           path: allure-report
-
-      - name: Commit and push changes
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m 'Update test results and reports' || echo "No changes to commit"
-          git push
