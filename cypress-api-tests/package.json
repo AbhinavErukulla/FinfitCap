@@ -7,6 +7,7 @@
     "cypress:run": "cypress run"
   },
   "devDependencies": {
+    "@shelex/cypress-allure-plugin": "^2.41.2",
     "cypress": "^13.17.0"
   }
 }

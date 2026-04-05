@@ -28,4 +28,13 @@ test('test1', async ({ page }) => {
   await page.getByRole('button', { name: 'Search' }).click();
 });
 
+test('test2', async ({ page }) => {
+  await page.goto('http://localhost:3000/');
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('link', { name: 'Home' }).click();
+  await page.getByRole('link', { name: 'Browse items' }).click();
+  await page.getByRole('searchbox', { name: 'Search keywords' }).click();
+  await page.getByRole('searchbox', { name: 'Search keywords' }).fill('Phone');
+  await page.getByRole('button', { name: 'Search' }).click();
+});
 

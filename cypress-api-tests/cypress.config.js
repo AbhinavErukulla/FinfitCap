@@ -6,5 +6,12 @@ module.exports = defineConfig({
     specPattern: 'cypress/e2e/**/*.cy.js',
     supportFile: 'cypress/support/e2e.js',
     video: false,
+    setupNodeEvents(on, config) {
+      require('@shelex/cypress-allure-plugin/writer')(on, config);
+      return config;
+    },
+  },
+  env: {
+    allureResultsPath: 'allure-results',
   },
 });

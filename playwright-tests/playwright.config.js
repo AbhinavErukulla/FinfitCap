@@ -17,10 +17,7 @@ const projects = [
     name: 'Mobile Chrome',
     use: { ...devices['Pixel 5'] },
   },
-  // {
-  //   name: 'webkit',
-  //   use: { ...devices['Desktop Safari'] },
-  // },
+  { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
 ];
 
 module.exports = defineConfig({
