@@ -10,3 +10,4 @@ backend/.env
 **/.idea/
 *.log
 .DS_Store
+combined-allure-results/
